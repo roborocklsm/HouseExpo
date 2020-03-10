@@ -15,6 +15,10 @@ ALLOWED_ROOM_TYPES = {'indoor':3, 'kitchen':4, 'dining_room':5, 'living_room':6,
 beds_meter = [[2.0,2.0],[1.8, 2.0], [1.5, 2.0], [1.2 ,2.0]]
 beds_pixels = [[int(bed_meter[0]*meter2pixel), int(bed_meter[1]*meter2pixel)] for bed_meter in beds_meter]
 
+barriers_meter = [[0.5, 0.5],[0.4, 0.4],[0.3 ,0.3],[0.5, 0.4],[0.5,0.3],[0.4,0.3]]
+# barriers_meter = [[0.3, 0.3],[0.2, 0.2],[0.1 ,0.1],[0.3, 0.2],[0.3,0.1],[0.2,0.1]]
+barriers_pixels = [[int(barrier_meter[0]*meter2pixel), int(barrier_meter[1]*meter2pixel)] for barrier_meter in barriers_meter]
+
 height, width = 512, 512
 
 bx1 = int(0.95*width)
@@ -153,98 +157,116 @@ def draw_map(file_name, json_path, save_path):
     cv2.drawContours(inp_map, [verts], -1, 2, 1)
 
 
-    for room_cate in json_data['room_category']:
-        room_id = _get_room_tp_id(room_cate)
-        if room_id != 8:
-            for box in json_data['room_category'][room_cate]:
-                x0 = int(box[0]*meter2pixel)+border_pad-x_min
-                y0 = int(box[1]*meter2pixel)+border_pad-y_min
-                x1 = int(box[2]*meter2pixel)+border_pad-x_min
-                y1 = int(box[3]*meter2pixel)+border_pad-y_min
-                tmp_map = np.zeros(inp_map.shape)
-                tmp_map[y0:y1, x0:x1] = 1
-                inp_map[np.where((inp_map!=0)*(inp_map!=2)*(tmp_map==1))] = room_id
+    # for room_cate in json_data['room_category']:
+    #     room_id = _get_room_tp_id(room_cate)
+    #     if room_id not in [4,5,6,9,8]:
+    #         for box in json_data['room_category'][room_cate]:
+    #             x0 = int(box[0]*meter2pixel)+border_pad-x_min
+    #             y0 = int(box[1]*meter2pixel)+border_pad-y_min
+    #             x1 = int(box[2]*meter2pixel)+border_pad-x_min
+    #             y1 = int(box[3]*meter2pixel)+border_pad-y_min
+    #             tmp_map = np.zeros(inp_map.shape)
+    #             tmp_map[y0:y1, x0:x1] = 1
+    #             inp_map[np.where((inp_map!=0)*(inp_map!=2)*(tmp_map==1))] = room_id
 
     for room_cate in json_data['room_category']:
         room_id = _get_room_tp_id(room_cate)
+        # if room_id in [4,5,6,9,8]:
+            # add 
         if room_id == 8:
-            # add bed
-            bed_idx = np.random.randint(len(beds_pixels))
-            for box in json_data['room_category'][room_cate]:
-                x0 = int(box[0]*meter2pixel)+border_pad-x_min
-                y0 = int(box[1]*meter2pixel)+border_pad-y_min
-                x1 = int(box[2]*meter2pixel)+border_pad-x_min
-                y1 = int(box[3]*meter2pixel)+border_pad-y_min
-                try:
-                    tmp_map = np.zeros(inp_map.shape)
-                    tmp_map[y0:y1, x0:x1] = 1
-                    y_array, x_array = np.where((inp_map!=0)*(tmp_map==1))
-                    x00_lim = x_array.min()
-                    x11_lim = x_array.max()
-                    y00_lim = y_array.min()
-                    y11_lim = y_array.max()
-
-                    if np.random.randn()<0:
-                        # bed ver
-                        bed_w = beds_pixels[bed_idx][0]
-                        bed_h = beds_pixels[bed_idx][1]
-                    else:
-                        # bed hor
-                        bed_w = beds_pixels[bed_idx][1]
-                        bed_h = beds_pixels[bed_idx][0]
-                    # case = np.random.randint(4)
-                    add_bed_flag = False
-                    if not add_bed_flag:
-                        x00 = x00_lim+np.random.randint(x11_lim-x00_lim-bed_h)
-                        y00 = y00_lim
-                        x11 = x00+bed_h
-                        y11 = y00+bed_w
-                        if (inp_map[y00:y11, x00:x11] != 0).all():
-                            inp_map[y00-1:y11+1, x00-1:x11+1] = 19
-                            add_bed_flag = True
-                    if not add_bed_flag:
-                        x00 = x00_lim
-                        y00 = y00_lim+np.random.randint(y11_lim-y00_lim-bed_w)
-                        x11 = x00+bed_h
-                        y11 = y00+bed_w
-                        if ((inp_map[y00:y11, x00:x11] != 0) * \
-                        (inp_map[y00:y11, x00:x11] != 2)).all():
-                            inp_map[y00-1:y11+1, x00-1:x11+1] = 19
-                            add_bed_flag = True
-                    if not add_bed_flag:
-                        x11 = x11_lim-np.random.randint(x11_lim-x00_lim-bed_h)
-                        y11 = y11_lim
-                        x00 = x11-bed_h
-                        y00 = y11-bed_w
-                        if (inp_map[y00:y11, x00:x11] != 0).all():
-                            inp_map[y00-1:y11+1, x00-1:x11+1] = 19
-                            add_bed_flag = True
-                    if not add_bed_flag:
-                        x11 = x11_lim
-                        y11 = y11_lim-np.random.randint(y11_lim-y00_lim-bed_w)
-                        x00 = x11-bed_h
-                        y00 = y11-bed_w
-                        if (inp_map[y00:y11, x00:x11] != 0).all():
-                            inp_map[y00-1:y11+1, x00-1:x11+1] = 19
-                            add_bed_flag = True
-                
-                    if add_bed_flag:
-                        print("=============== add bed: {}".format(file_name))
-                        # print(x00, y00, x11, y11)
-                        # print(case)
-                        # print(bed_h, bed_w)
-                        # print(x0, y0, x1, y1)
-                except:
-                    pass
-
+            idx = np.random.randint(len(beds_pixels))
+            scale_pixels = beds_pixels
+        else:
+            idx = np.random.randint(len(barriers_pixels))
+            scale_pixels = barriers_pixels
+        for box in json_data['room_category'][room_cate]:
+            x0 = int(box[0]*meter2pixel)+border_pad-x_min
+            y0 = int(box[1]*meter2pixel)+border_pad-y_min
+            x1 = int(box[2]*meter2pixel)+border_pad-x_min
+            y1 = int(box[3]*meter2pixel)+border_pad-y_min
+            try:
                 tmp_map = np.zeros(inp_map.shape)
                 tmp_map[y0:y1, x0:x1] = 1
-                inp_map[np.where((inp_map!=19)*(inp_map!=0)*(inp_map!=2)*(tmp_map==1))] = room_id
-                inp_map[np.where(inp_map==19)] = 0
+                y_array, x_array = np.where((inp_map!=0)*(tmp_map==1))
+                x00_lim = x_array.min()
+                x11_lim = x_array.max()
+                y00_lim = y_array.min()
+                y11_lim = y_array.max()
+
+                if np.random.randn()<0:
+                    # bed ver
+                    bed_w = scale_pixels[idx][0]
+                    bed_h = scale_pixels[idx][1]
+                else:
+                    # bed hor
+                    bed_w = scale_pixels[idx][1]
+                    bed_h = scale_pixels[idx][0]
+                # case = np.random.randint(4)
+                add_bed_flag = False
+                if not add_bed_flag:
+                    x00 = x00_lim+np.random.randint(x11_lim-x00_lim-bed_h)
+                    y00 = y00_lim
+                    x11 = x00+bed_h
+                    y11 = y00+bed_w
+                    if (inp_map[y00:y11, x00:x11] != 0).all():
+                        inp_map[y00-1:y11+1, x00-1:x11+1] = 19
+                        add_bed_flag = True
+                if not add_bed_flag:
+                    x00 = x00_lim
+                    y00 = y00_lim+np.random.randint(y11_lim-y00_lim-bed_w)
+                    x11 = x00+bed_h
+                    y11 = y00+bed_w
+                    if ((inp_map[y00:y11, x00:x11] != 0) * \
+                    (inp_map[y00:y11, x00:x11] != 2)).all():
+                        inp_map[y00-1:y11+1, x00-1:x11+1] = 19
+                        add_bed_flag = True
+                if not add_bed_flag:
+                    x11 = x11_lim-np.random.randint(x11_lim-x00_lim-bed_h)
+                    y11 = y11_lim
+                    x00 = x11-bed_h
+                    y00 = y11-bed_w
+                    if (inp_map[y00:y11, x00:x11] != 0).all():
+                        inp_map[y00-1:y11+1, x00-1:x11+1] = 19
+                        add_bed_flag = True
+                if not add_bed_flag:
+                    x11 = x11_lim
+                    y11 = y11_lim-np.random.randint(y11_lim-y00_lim-bed_w)
+                    x00 = x11-bed_h
+                    y00 = y11-bed_w
+                    if (inp_map[y00:y11, x00:x11] != 0).all():
+                        inp_map[y00-1:y11+1, x00-1:x11+1] = 19
+                        add_bed_flag = True
+            
+                if add_bed_flag:
+                    if room_id == 8:
+                        print("=============== add bed: {}".format(file_name))
+                    else:
+                        print("=============== add barry: {}".format(file_name))
+                    # print(x00, y00, x11, y11)
+                    # print(case)
+                    # print(bed_h, bed_w)
+                    # print(x0, y0, x1, y1)
+            except:
+                pass
+
+            tmp_map = np.zeros(inp_map.shape)
+            tmp_map[y0:y1, x0:x1] = 1
+            inp_map[np.where((inp_map!=19)*(inp_map!=0)*(inp_map!=2)*(tmp_map==1))] = room_id
+            inp_map[np.where(inp_map==19)] = 0
     
     inp_map = (inp_map != 0).astype(np.uint8)
     contours, hierarchy = cv2.findContours(inp_map, 2, 1)
     cv2.drawContours(inp_map, contours, -1, 2)
+    x_boundary, y_boundary = np.where(inp_map == 2)
+    abandoned_boundary_idx = np.random.random(x_boundary.shape)<0.1
+    x_boundary = x_boundary[abandoned_boundary_idx]
+    y_boundary = y_boundary[abandoned_boundary_idx]
+    inp_map[(x_boundary,y_boundary)] = 0
+    x_boundary, y_boundary = np.where(inp_map == 2)
+    abandoned_boundary_idx = np.random.random(x_boundary.shape)<0.1
+    x_boundary = x_boundary[abandoned_boundary_idx]
+    y_boundary = y_boundary[abandoned_boundary_idx]
+    inp_map[(x_boundary,y_boundary)] = 1
 
     inp = np.zeros((height, width)).astype(np.uint8)
     inp[(height-inp_map.shape[0])//2:(height-inp_map.shape[0])//2+inp_map.shape[0],\
@@ -255,7 +277,7 @@ def draw_map(file_name, json_path, save_path):
          (width-raw_map.shape[1])//2:(width-raw_map.shape[1])//2+raw_map.shape[1]] = raw_map
 
     # freespace enhance
-    dot_num = 2000
+    dot_num = 100
     cnt = 0
     cnt2 = 0
 
@@ -264,18 +286,9 @@ def draw_map(file_name, json_path, save_path):
     bx0 = int(0.05*width)
     by0 = int(0.05*height)
 
-    for _ in range(1000):
-        if np.random.random()<0.5:
-            x,y = np.random.rand(2)
-            x = int(x*height)
-            y = int(y*width)        
-            w = np.random.randint(2,15)
-            h = np.random.randint(2,15)
-            x = max(min(x, bx1), bx0)
-            y = max(min(y, by1), by0)
-            if np.unique(inp[x-h//2:x+h//2, y-h//2:y+h//2]).shape[0]>1:
-                inp[x-w//2:x+w//2,y-h//2:y+h//2] = np.zeros((w//2*2,h//2*2))
-        else:
+    for _ in range(2500):
+        randcoinf = np.random.random()
+        if randcoinf<0.01:
             x,y = np.random.rand(2)
             x = int(x*height)
             y = int(y*width)        
@@ -283,8 +296,32 @@ def draw_map(file_name, json_path, save_path):
             h = np.random.randint(2,10)
             x = max(min(x, bx1), bx0)
             y = max(min(y, by1), by0)
-            if np.unique(inp[x-h//2:x+h//2, y-h//2:y+h//2]).shape[0]>1:
+            # if np.unique(inp[x-h//2:x+h//2, y-h//2:y+h//2]).shape[0]>1:
+            if inp[x,y] in [1,2]:
+                inp[x-w//2:x+w//2,y-h//2:y+h//2] = np.zeros((w//2*2,h//2*2))
+        elif randcoinf<0.1:
+            x,y = np.random.rand(2)
+            x = int(x*height)
+            y = int(y*width)        
+            w = np.random.randint(2,5)
+            h = np.random.randint(2,5)
+            x = max(min(x, bx1), bx0)
+            y = max(min(y, by1), by0)
+            # if np.unique(inp[x-h//2:x+h//2, y-h//2:y+h//2]).shape[0]>1:
+            if inp[x,y] in [1,2]:
                 inp[x-w//2:x+w//2,y-h//2:y+h//2] = np.ones((w//2*2,h//2*2))*2
+        else:
+            x,y = np.random.rand(2)
+            x = int(x*height)
+            y = int(y*width)        
+            w = np.random.randint(2,5)
+            h = np.random.randint(2,5)
+            x = max(min(x, bx1), bx0)
+            y = max(min(y, by1), by0)
+            if np.unique(inp[x-h//2:x+h//2, y-h//2:y+h//2]).shape[0]>1:
+            # if inp[x,y] in [1,2]:
+                inp[x-w//2:x+w//2,y-h//2:y+h//2] = np.ones((w//2*2,h//2*2))*2
+
 
     for _ in range(dot_num):
         x,y = np.random.rand(2)
@@ -293,22 +330,25 @@ def draw_map(file_name, json_path, save_path):
         if inp[x,y] == 2:
             w = np.random.randint(2,5)
             h = np.random.randint(2,5)
-            if np.random.rand()<0.7:
+            random_num = np.random.rand()
+            if random_num<0.8:
                 inp[x-w//2:x+w//2,y-h//2:y+h//2] = np.ones((width,height))[x-w//2:x+w//2,y-h//2:y+h//2]*2
+            elif random_num<0.9:
+                inp[x-w*2:x+w*2,y-h*2:y+h*2] = np.ones((width,height))[x-w*2:x+w*2,y-h*2:y+h*2]*1
             else:
-                inp[x-w//2:x+w//2,y-h//2:y+h//2] = np.ones((width,height))[x-w//2:x+w//2,y-h//2:y+h//2]*1
+                inp[x-w*2:x+w*2,y-h*2:y+h*2] = np.zeros((width,height))[x-w*2:x+w*2,y-h*2:y+h*2]
 
         if inp[x,y] == 1:
-            if cnt <60:
-                if cnt2 < 40:
+            if cnt <20:
+                if cnt2 < 10:
                     cnt2 += 1
                     w = np.random.randint(1,5)
                     h = np.random.randint(1,5)
                     inp[x-w//2:x+w//2,y-h//2:y+h//2] = np.zeros((width,height))[x-w//2:x+w//2,y-h//2:y+h//2]
                 else:
                     cnt += 1
-                    w = np.random.randint(1,5)
-                    h = np.random.randint(1,5)
+                    w = np.random.randint(1,3)
+                    h = np.random.randint(1,3)
                     inp[x-w//2:x+w//2,y-h//2:y+h//2] = np.ones((width,height))[x-w//2:x+w//2,y-h//2:y+h//2]*2
     #             else:
     #                 inp[x,y] = 0
@@ -322,6 +362,10 @@ def draw_map(file_name, json_path, save_path):
     inp = np.array(image) 
 
     inp_map = np.concatenate([tar, inp], 1)
+
+    inp_map[np.where(inp_map==0)] = 127
+    inp_map[np.where(inp_map==1)] = 255
+    inp_map[np.where(inp_map==2)] = 0
 
     # Save map
     if not os.path.exists(save_path + "/inp"):
