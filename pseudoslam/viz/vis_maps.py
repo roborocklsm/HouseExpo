@@ -173,12 +173,12 @@ def draw_map(file_name, json_path, save_path):
         room_id = _get_room_tp_id(room_cate)
         # if room_id in [4,5,6,9,8]:
             # add 
-        if room_id == 8:
-            idx = np.random.randint(len(beds_pixels))
-            scale_pixels = beds_pixels
-        else:
-            idx = np.random.randint(len(barriers_pixels))
-            scale_pixels = barriers_pixels
+        # if room_id == 8:
+        #     idx = np.random.randint(len(beds_pixels))
+        #     scale_pixels = beds_pixels
+        # else:
+        idx = np.random.randint(len(barriers_pixels))
+        scale_pixels = barriers_pixels
         for box in json_data['room_category'][room_cate]:
             x0 = int(box[0]*meter2pixel)+border_pad-x_min
             y0 = int(box[1]*meter2pixel)+border_pad-y_min
@@ -238,10 +238,10 @@ def draw_map(file_name, json_path, save_path):
                         add_bed_flag = True
             
                 if add_bed_flag:
-                    if room_id == 8:
-                        print("=============== add bed: {}".format(file_name))
-                    else:
-                        print("=============== add barry: {}".format(file_name))
+                    # if room_id == 8:
+                        # print("=============== add bed: {}".format(file_name))
+                    # else:
+                    print("=============== add barry: {}".format(file_name))
                     # print(x00, y00, x11, y11)
                     # print(case)
                     # print(bed_h, bed_w)
